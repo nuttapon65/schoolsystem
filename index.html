@@ -3,299 +3,131 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ระบบลงทะเบียนข้อมูล</title>
-    
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>ลงทะเบียนผู้ปกครอง</title>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script> <script src="https://cdn.tailwindcss.com"></script>
+    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
-    
-    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-    <style>
-        body { font-family: 'Sarabun', sans-serif; background-color: #f0f2f5; }
-        .glass-effect {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-        }
-    </style>
+    <style> body { font-family: 'Sarabun', sans-serif; background-color: #f3f4f6; } </style>
 </head>
-<body class="p-4 min-h-screen">
+<body class="min-h-screen flex items-center justify-center p-4">
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbxn4THGLjeO7pVcejmAb86H8wJpCa-ftm_m_2RHkomFtS91k5Durt78b3WtvtGTxRfT/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbxn4THGLjeO7pVcejmAb86H8wJpCa-ftm_m_2RHkomFtS91k5Durt78b3WtvtGTxRfT/exec"; 
+        const LIFF_ID = "2008830546-kUtMFdic"; // เช่น 1657xxxxxx-xxxxxxxxx
     </script>
 
-    <div class="max-w-xl mx-auto">
-        <div class="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl shadow-lg p-6 text-white mb-6 relative overflow-hidden">
-            <div class="relative z-10 flex justify-between items-center">
+    <div class="bg-white w-full max-w-sm rounded-2xl shadow-xl overflow-hidden">
+        <div class="bg-green-500 p-6 text-center text-white">
+            <i class="fab fa-line text-5xl mb-2"></i>
+            <h1 class="text-xl font-bold">ลงทะเบียนรับแจ้งเตือน</h1>
+            <p class="text-green-100 text-sm">ระบบติดตามรถรับส่งนักเรียน</p>
+        </div>
+
+        <div class="p-6">
+            <div id="liffLoading" class="text-center py-4">
+                <i class="fas fa-circle-notch fa-spin text-green-500"></i> กำลังโหลดข้อมูล LINE...
+            </div>
+
+            <div id="profileSection" class="hidden text-center mb-6">
+                <img id="profileImage" src="" class="w-20 h-20 rounded-full mx-auto border-4 border-green-100 shadow-sm mb-2">
+                <p class="text-gray-500 text-sm">ยินดีต้อนรับผู้ปกครอง</p>
+                <h2 id="displayName" class="text-lg font-bold text-gray-800">User Name</h2>
+            </div>
+
+            <form id="registerForm" onsubmit="handleRegister(event)" class="hidden space-y-4">
                 <div>
-                    <h1 class="text-2xl font-bold"><i class="fas fa-database mr-2"></i>ระบบลงทะเบียน</h1>
-                    <p class="text-blue-100 text-sm mt-1">จัดการข้อมูล Telegram Group</p>
+                    <label class="block text-gray-700 text-sm font-bold mb-2">กรอกเลขประจำตัวนักเรียน</label>
+                    <input type="tel" id="studentId" required placeholder="เช่น 650123" 
+                           class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-200 transition text-center text-lg tracking-widest">
                 </div>
-                <button onclick="openModal()" class="bg-white text-blue-600 w-12 h-12 rounded-full shadow-lg flex items-center justify-center hover:bg-blue-50 transition transform hover:scale-105 active:scale-95">
-                    <i class="fas fa-plus text-xl"></i>
+                
+                <input type="hidden" id="userId"> <button type="submit" id="submitBtn" class="w-full bg-green-600 text-white font-bold py-3 rounded-lg shadow hover:bg-green-700 transition transform active:scale-95">
+                    ยืนยันการลงทะเบียน
                 </button>
-            </div>
-            <div class="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 rounded-full bg-white opacity-10"></div>
-        </div>
-
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden min-h-[300px]">
-            
-            <div id="loading" class="flex flex-col items-center justify-center py-12 text-gray-400">
-                <i class="fas fa-circle-notch fa-spin text-4xl text-blue-500 mb-4"></i>
-                <p>กำลังเชื่อมต่อฐานข้อมูล...</p>
-            </div>
-
-            <div id="emptyState" class="hidden flex flex-col items-center justify-center py-12 text-gray-400">
-                <i class="fas fa-folder-open text-6xl mb-4 text-gray-200"></i>
-                <p>ยังไม่มีข้อมูลในระบบ</p>
-                <button onclick="openModal()" class="mt-4 text-blue-600 font-bold hover:underline">เพิ่มข้อมูลแรกเลย!</button>
-            </div>
-
-            <ul id="listContainer" class="divide-y divide-gray-100 hidden">
-                </ul>
-        </div>
-    </div>
-
-    <div id="modal" class="fixed inset-0 bg-gray-900 bg-opacity-60 hidden flex items-end sm:items-center justify-center z-50 transition-opacity">
-        <div class="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden transform transition-all animate-slide-up">
-            
-            <div class="bg-gray-50 px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-                <h3 class="text-lg font-bold text-gray-800" id="modalTitle">ลงทะเบียนข้อมูลใหม่</h3>
-                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-xl"></i></button>
-            </div>
-
-            <form onsubmit="handleSubmit(event)" class="p-6">
-                <input type="hidden" id="originalName"> <div class="space-y-4">
-                    <div>
-                        <label class="block text-gray-700 text-sm font-bold mb-2">ชื่อกลุ่ม (Group Name)</label>
-                        <div class="relative">
-                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400"><i class="fas fa-tag"></i></span>
-                            <input type="text" id="groupName" required placeholder="เช่น IT Support, Sales" 
-                                class="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors bg-gray-50 focus:bg-white">
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-gray-700 text-sm font-bold mb-2">Chat ID</label>
-                        <div class="relative">
-                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400"><i class="fas fa-hashtag"></i></span>
-                            <input type="text" id="groupId" required placeholder="เช่น -10012345678" 
-                                class="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors bg-gray-50 focus:bg-white font-mono text-sm">
-                        </div>
-                    </div>
-
-                    <div class="pt-2 border-t border-dashed">
-                        <label class="block text-gray-600 text-xs font-bold mb-2 uppercase tracking-wide">ยืนยันรหัสผ่าน Admin</label>
-                        <div class="relative">
-                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400"><i class="fas fa-lock"></i></span>
-                            <input type="password" id="adminPassword" placeholder="กรอกรหัสผ่านเพื่อบันทึก" 
-                                class="w-full pl-10 pr-3 py-2 border border-yellow-200 bg-yellow-50 rounded-lg focus:outline-none focus:border-yellow-400 text-sm">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="mt-6 flex gap-3">
-                    <button type="button" onclick="closeModal()" class="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition">ยกเลิก</button>
-                    <button type="submit" id="saveBtn" class="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition">
-                        บันทึกข้อมูล
-                    </button>
-                </div>
             </form>
         </div>
     </div>
 
     <script>
-        let isEditing = false; // ตัวแปรเช็คสถานะว่ากำลัง เพิ่ม หรือ แก้ไข
+        // เริ่มทำงานเมื่อเปิดเว็บ
+        window.onload = async function() {
+            await initializeLiff();
+        };
 
-        // เริ่มต้นโหลดข้อมูลทันที
-        window.onload = loadData;
-
-        // 1. ฟังก์ชันดึงข้อมูล (READ)
-        async function loadData() {
-            setLoading(true);
+        async function initializeLiff() {
             try {
-                // ส่ง action: 'get' ไปที่ API URL
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: 'get' })
-                });
-                const res = await response.json();
-                renderList(res.data);
-            } catch (error) {
-                console.error(error);
-                Swal.fire('เชื่อมต่อล้มเหลว', 'ไม่สามารถดึงข้อมูลจาก Server ได้', 'error');
-            } finally {
-                setLoading(false);
-            }
-        }
-
-        // 2. ฟังก์ชันแสดงผลรายการ (Render)
-        function renderList(data) {
-            const list = document.getElementById('listContainer');
-            const empty = document.getElementById('emptyState');
-            list.innerHTML = '';
-
-            if (!data || data.length === 0) {
-                list.classList.add('hidden');
-                empty.classList.remove('hidden');
-                return;
-            }
-
-            empty.classList.add('hidden');
-            list.classList.remove('hidden');
-
-            data.forEach(item => {
-                const li = document.createElement('li');
-                li.className = "p-4 hover:bg-gray-50 transition flex justify-between items-center group";
-                li.innerHTML = `
-                    <div class="flex items-center gap-4">
-                        <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-lg">
-                            ${item.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                            <div class="font-bold text-gray-800">${item.name}</div>
-                            <div class="text-xs text-gray-500 font-mono bg-gray-100 px-2 py-0.5 rounded inline-block">${item.id}</div>
-                        </div>
-                    </div>
-                    <div class="flex gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                        <button onclick="prepareEdit('${item.name}', '${item.id}')" class="w-8 h-8 rounded-full bg-white border border-gray-200 text-yellow-500 hover:bg-yellow-50 shadow-sm flex items-center justify-center">
-                            <i class="fas fa-pen text-xs"></i>
-                        </button>
-                        <button onclick="deleteItem('${item.name}')" class="w-8 h-8 rounded-full bg-white border border-gray-200 text-red-500 hover:bg-red-50 shadow-sm flex items-center justify-center">
-                            <i class="fas fa-trash text-xs"></i>
-                        </button>
-                    </div>
-                `;
-                list.appendChild(li);
-            });
-        }
-
-        // 3. ฟังก์ชันบันทึกข้อมูล (CREATE / UPDATE)
-        async function handleSubmit(e) {
-            e.preventDefault();
-            
-            const name = document.getElementById('groupName').value;
-            const id = document.getElementById('groupId').value;
-            const password = document.getElementById('adminPassword').value;
-            const originalName = document.getElementById('originalName').value;
-
-            // เช็ครหัสผ่านก่อนส่ง
-            if (!password) {
-                return Swal.fire('ลืมรหัสผ่าน?', 'กรุณากรอกรหัสผ่าน Admin เพื่อยืนยัน', 'warning');
-            }
-
-            const btn = document.getElementById('saveBtn');
-            const originalBtnText = btn.innerText;
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> กำลังบันทึก...';
-
-            try {
-                let payload = {
-                    action: isEditing ? 'update' : 'add',
-                    name: name,
-                    id: id,
-                    password: password
-                };
-
-                if (isEditing) {
-                    payload.originalName = originalName;
+                await liff.init({ liffId: LIFF_ID });
+                
+                if (!liff.isLoggedIn()) {
+                    liff.login(); // ถ้ายังไม่ล็อกอิน ให้เด้งไปหน้าล็อกอินไลน์
+                    return;
                 }
 
+                // ดึงข้อมูลโปรไฟล์
+                const profile = await liff.getProfile();
+                
+                // แสดงข้อมูลบนหน้าเว็บ
+                document.getElementById('liffLoading').classList.add('hidden');
+                document.getElementById('profileSection').classList.remove('hidden');
+                document.getElementById('registerForm').classList.remove('hidden');
+                
+                document.getElementById('profileImage').src = profile.pictureUrl || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
+                document.getElementById('displayName').innerText = profile.displayName;
+                document.getElementById('userId').value = profile.userId; // เก็บ User ID ไว้ใน Input ลับ
+
+            } catch (err) {
+                console.error('LIFF Error:', err);
+                Swal.fire('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อกับ LINE ได้ กรุณาเปิดในแอป LINE', 'error');
+            }
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            
+            const btn = document.getElementById('submitBtn');
+            const studentId = document.getElementById('studentId').value;
+            const userId = document.getElementById('userId').value;
+            const displayName = document.getElementById('displayName').innerText;
+
+            if(!userId) return Swal.fire('Error', 'ไม่พบข้อมูลผู้ใช้ LINE', 'error');
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังบันทึก...';
+
+            try {
                 const response = await fetch(API_URL, {
                     method: 'POST',
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify({
+                        action: 'register',
+                        studentId: studentId,
+                        userId: userId,
+                        displayName: displayName
+                    })
                 });
                 
                 const res = await response.json();
 
                 if (res.success) {
-                    closeModal();
-                    Swal.fire({ icon: 'success', title: 'สำเร็จ!', text: isEditing ? 'แก้ไขข้อมูลแล้ว' : 'เพิ่มข้อมูลใหม่แล้ว', timer: 1500, showConfirmButton: false });
-                    loadData(); // โหลดข้อมูลใหม่
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'ลงทะเบียนสำเร็จ!',
+                        text: 'ระบบได้บันทึกข้อมูลเรียบร้อยแล้ว',
+                        confirmButtonText: 'ปิดหน้าต่าง'
+                    }).then(() => {
+                        liff.closeWindow(); // ปิดหน้าต่าง LIFF อัตโนมัติ
+                    });
                 } else {
                     Swal.fire('เกิดข้อผิดพลาด', res.message, 'error');
+                    btn.disabled = false;
+                    btn.innerText = 'ยืนยันการลงทะเบียน';
                 }
 
             } catch (error) {
-                Swal.fire('Error', 'เกิดข้อผิดพลาดในการเชื่อมต่อ', 'error');
-            } finally {
+                Swal.fire('เชื่อมต่อล้มเหลว', 'กรุณาลองใหม่อีกครั้ง', 'error');
                 btn.disabled = false;
-                btn.innerText = originalBtnText;
+                btn.innerText = 'ยืนยันการลงทะเบียน';
             }
-        }
-
-        // 4. ฟังก์ชันลบข้อมูล (DELETE)
-        async function deleteItem(name) {
-            const { value: password } = await Swal.fire({
-                title: 'ยืนยันการลบ?',
-                text: `คุณต้องการลบกลุ่ม "${name}" ใช่หรือไม่?`,
-                icon: 'warning',
-                input: 'password',
-                inputPlaceholder: 'กรอกรหัสผ่าน Admin เพื่อยืนยัน',
-                showCancelButton: true,
-                confirmButtonColor: '#ef4444',
-                confirmButtonText: 'ลบข้อมูล',
-                cancelButtonText: 'ยกเลิก'
-            });
-
-            if (password) {
-                Swal.fire({ title: 'กำลังลบ...', didOpen: () => Swal.showLoading() });
-                
-                try {
-                    const response = await fetch(API_URL, {
-                        method: 'POST',
-                        body: JSON.stringify({ action: 'delete', name: name, password: password })
-                    });
-                    const res = await response.json();
-                    
-                    if (res.success) {
-                        Swal.fire('เรียบร้อย', 'ลบข้อมูลสำเร็จแล้ว', 'success');
-                        loadData();
-                    } else {
-                        Swal.fire('ไม่สำเร็จ', res.message, 'error');
-                    }
-                } catch (error) {
-                    Swal.fire('Error', 'เชื่อมต่อ Server ไม่ได้', 'error');
-                }
-            }
-        }
-
-        // --- Helper Functions ---
-        function setLoading(isLoading) {
-            const loader = document.getElementById('loading');
-            const list = document.getElementById('listContainer');
-            const empty = document.getElementById('emptyState');
-            
-            if (isLoading) {
-                loader.classList.remove('hidden');
-                list.classList.add('hidden');
-                empty.classList.add('hidden');
-            } else {
-                loader.classList.add('hidden');
-            }
-        }
-
-        function openModal() {
-            document.getElementById('modal').classList.remove('hidden');
-            document.getElementById('groupName').value = '';
-            document.getElementById('groupId').value = '';
-            document.getElementById('adminPassword').value = ''; // เคลียร์รหัสผ่านทุกครั้ง
-            document.getElementById('modalTitle').innerText = 'ลงทะเบียนข้อมูลใหม่';
-            isEditing = false;
-        }
-
-        function closeModal() {
-            document.getElementById('modal').classList.add('hidden');
-        }
-
-        function prepareEdit(name, id) {
-            openModal();
-            document.getElementById('modalTitle').innerText = 'แก้ไขข้อมูล';
-            document.getElementById('groupName').value = name;
-            document.getElementById('originalName').value = name;
-            document.getElementById('groupId').value = id;
-            isEditing = true;
         }
     </script>
 </body>
