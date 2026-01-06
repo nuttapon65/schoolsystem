@@ -1,0 +1,38 @@
+var SHEET_CONFIG_NAME = "Config";
+var ADMIN_PASSWORD = "1234"; // 🔑 ตั้งรหัสผ่านตรงนี้
+
+function doPost(e) {
+  try {
+    var params = JSON.parse(e.postData.contents);
+    
+    // เช็ครหัสผ่าน
+    if (params.password !== ADMIN_PASSWORD) {
+       return ContentService.createTextOutput(JSON.stringify({ 
+         success: false, 
+         message: "รหัสผ่านไม่ถูกต้อง!" 
+       })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    var action = params.action;
+    var result = {};
+
+    if (action == "get") {
+      result = getGroupList();
+    } else if (action == "add") {
+      result = addGroup(params.name, params.id);
+    } else if (action == "update") {
+      result = updateGroup(params.originalName, params.name, params.id);
+    } else if (action == "delete") {
+      result = deleteGroup(params.name);
+    }
+
+    return ContentService.createTextOutput(JSON.stringify(result))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({ success: false, message: error.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// ... (ใส่ฟังก์ชัน getGroupList, addGroup, updateGroup, deleteGroup, getSheet, findRowByName ต่อท้ายเหมือนเดิม) ...
