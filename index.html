@@ -1,38 +1,302 @@
-var SHEET_CONFIG_NAME = "Config";
-var ADMIN_PASSWORD = "1234"; // 🔑 ตั้งรหัสผ่านตรงนี้
-
-function doPost(e) {
-  try {
-    var params = JSON.parse(e.postData.contents);
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ระบบลงทะเบียนข้อมูล</title>
     
-    // เช็ครหัสผ่าน
-    if (params.password !== ADMIN_PASSWORD) {
-       return ContentService.createTextOutput(JSON.stringify({ 
-         success: false, 
-         message: "รหัสผ่านไม่ถูกต้อง!" 
-       })).setMimeType(ContentService.MimeType.JSON);
-    }
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    var action = params.action;
-    var result = {};
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background-color: #f0f2f5; }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body class="p-4 min-h-screen">
 
-    if (action == "get") {
-      result = getGroupList();
-    } else if (action == "add") {
-      result = addGroup(params.name, params.id);
-    } else if (action == "update") {
-      result = updateGroup(params.originalName, params.name, params.id);
-    } else if (action == "delete") {
-      result = deleteGroup(params.name);
-    }
+    <script>
+        const API_URL = "https://script.google.com/macros/s/AKfycbxn4THGLjeO7pVcejmAb86H8wJpCa-ftm_m_2RHkomFtS91k5Durt78b3WtvtGTxRfT/exec";
+    </script>
 
-    return ContentService.createTextOutput(JSON.stringify(result))
-      .setMimeType(ContentService.MimeType.JSON);
+    <div class="max-w-xl mx-auto">
+        <div class="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl shadow-lg p-6 text-white mb-6 relative overflow-hidden">
+            <div class="relative z-10 flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl font-bold"><i class="fas fa-database mr-2"></i>ระบบลงทะเบียน</h1>
+                    <p class="text-blue-100 text-sm mt-1">จัดการข้อมูล Telegram Group</p>
+                </div>
+                <button onclick="openModal()" class="bg-white text-blue-600 w-12 h-12 rounded-full shadow-lg flex items-center justify-center hover:bg-blue-50 transition transform hover:scale-105 active:scale-95">
+                    <i class="fas fa-plus text-xl"></i>
+                </button>
+            </div>
+            <div class="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 rounded-full bg-white opacity-10"></div>
+        </div>
 
-  } catch (error) {
-    return ContentService.createTextOutput(JSON.stringify({ success: false, message: error.toString() }))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden min-h-[300px]">
+            
+            <div id="loading" class="flex flex-col items-center justify-center py-12 text-gray-400">
+                <i class="fas fa-circle-notch fa-spin text-4xl text-blue-500 mb-4"></i>
+                <p>กำลังเชื่อมต่อฐานข้อมูล...</p>
+            </div>
 
-// ... (ใส่ฟังก์ชัน getGroupList, addGroup, updateGroup, deleteGroup, getSheet, findRowByName ต่อท้ายเหมือนเดิม) ...
+            <div id="emptyState" class="hidden flex flex-col items-center justify-center py-12 text-gray-400">
+                <i class="fas fa-folder-open text-6xl mb-4 text-gray-200"></i>
+                <p>ยังไม่มีข้อมูลในระบบ</p>
+                <button onclick="openModal()" class="mt-4 text-blue-600 font-bold hover:underline">เพิ่มข้อมูลแรกเลย!</button>
+            </div>
+
+            <ul id="listContainer" class="divide-y divide-gray-100 hidden">
+                </ul>
+        </div>
+    </div>
+
+    <div id="modal" class="fixed inset-0 bg-gray-900 bg-opacity-60 hidden flex items-end sm:items-center justify-center z-50 transition-opacity">
+        <div class="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden transform transition-all animate-slide-up">
+            
+            <div class="bg-gray-50 px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-gray-800" id="modalTitle">ลงทะเบียนข้อมูลใหม่</h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-xl"></i></button>
+            </div>
+
+            <form onsubmit="handleSubmit(event)" class="p-6">
+                <input type="hidden" id="originalName"> <div class="space-y-4">
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-2">ชื่อกลุ่ม (Group Name)</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400"><i class="fas fa-tag"></i></span>
+                            <input type="text" id="groupName" required placeholder="เช่น IT Support, Sales" 
+                                class="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors bg-gray-50 focus:bg-white">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-2">Chat ID</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400"><i class="fas fa-hashtag"></i></span>
+                            <input type="text" id="groupId" required placeholder="เช่น -10012345678" 
+                                class="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors bg-gray-50 focus:bg-white font-mono text-sm">
+                        </div>
+                    </div>
+
+                    <div class="pt-2 border-t border-dashed">
+                        <label class="block text-gray-600 text-xs font-bold mb-2 uppercase tracking-wide">ยืนยันรหัสผ่าน Admin</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400"><i class="fas fa-lock"></i></span>
+                            <input type="password" id="adminPassword" placeholder="กรอกรหัสผ่านเพื่อบันทึก" 
+                                class="w-full pl-10 pr-3 py-2 border border-yellow-200 bg-yellow-50 rounded-lg focus:outline-none focus:border-yellow-400 text-sm">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 flex gap-3">
+                    <button type="button" onclick="closeModal()" class="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition">ยกเลิก</button>
+                    <button type="submit" id="saveBtn" class="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition">
+                        บันทึกข้อมูล
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let isEditing = false; // ตัวแปรเช็คสถานะว่ากำลัง เพิ่ม หรือ แก้ไข
+
+        // เริ่มต้นโหลดข้อมูลทันที
+        window.onload = loadData;
+
+        // 1. ฟังก์ชันดึงข้อมูล (READ)
+        async function loadData() {
+            setLoading(true);
+            try {
+                // ส่ง action: 'get' ไปที่ API URL
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'get' })
+                });
+                const res = await response.json();
+                renderList(res.data);
+            } catch (error) {
+                console.error(error);
+                Swal.fire('เชื่อมต่อล้มเหลว', 'ไม่สามารถดึงข้อมูลจาก Server ได้', 'error');
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // 2. ฟังก์ชันแสดงผลรายการ (Render)
+        function renderList(data) {
+            const list = document.getElementById('listContainer');
+            const empty = document.getElementById('emptyState');
+            list.innerHTML = '';
+
+            if (!data || data.length === 0) {
+                list.classList.add('hidden');
+                empty.classList.remove('hidden');
+                return;
+            }
+
+            empty.classList.add('hidden');
+            list.classList.remove('hidden');
+
+            data.forEach(item => {
+                const li = document.createElement('li');
+                li.className = "p-4 hover:bg-gray-50 transition flex justify-between items-center group";
+                li.innerHTML = `
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-lg">
+                            ${item.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                            <div class="font-bold text-gray-800">${item.name}</div>
+                            <div class="text-xs text-gray-500 font-mono bg-gray-100 px-2 py-0.5 rounded inline-block">${item.id}</div>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                        <button onclick="prepareEdit('${item.name}', '${item.id}')" class="w-8 h-8 rounded-full bg-white border border-gray-200 text-yellow-500 hover:bg-yellow-50 shadow-sm flex items-center justify-center">
+                            <i class="fas fa-pen text-xs"></i>
+                        </button>
+                        <button onclick="deleteItem('${item.name}')" class="w-8 h-8 rounded-full bg-white border border-gray-200 text-red-500 hover:bg-red-50 shadow-sm flex items-center justify-center">
+                            <i class="fas fa-trash text-xs"></i>
+                        </button>
+                    </div>
+                `;
+                list.appendChild(li);
+            });
+        }
+
+        // 3. ฟังก์ชันบันทึกข้อมูล (CREATE / UPDATE)
+        async function handleSubmit(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('groupName').value;
+            const id = document.getElementById('groupId').value;
+            const password = document.getElementById('adminPassword').value;
+            const originalName = document.getElementById('originalName').value;
+
+            // เช็ครหัสผ่านก่อนส่ง
+            if (!password) {
+                return Swal.fire('ลืมรหัสผ่าน?', 'กรุณากรอกรหัสผ่าน Admin เพื่อยืนยัน', 'warning');
+            }
+
+            const btn = document.getElementById('saveBtn');
+            const originalBtnText = btn.innerText;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> กำลังบันทึก...';
+
+            try {
+                let payload = {
+                    action: isEditing ? 'update' : 'add',
+                    name: name,
+                    id: id,
+                    password: password
+                };
+
+                if (isEditing) {
+                    payload.originalName = originalName;
+                }
+
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+                
+                const res = await response.json();
+
+                if (res.success) {
+                    closeModal();
+                    Swal.fire({ icon: 'success', title: 'สำเร็จ!', text: isEditing ? 'แก้ไขข้อมูลแล้ว' : 'เพิ่มข้อมูลใหม่แล้ว', timer: 1500, showConfirmButton: false });
+                    loadData(); // โหลดข้อมูลใหม่
+                } else {
+                    Swal.fire('เกิดข้อผิดพลาด', res.message, 'error');
+                }
+
+            } catch (error) {
+                Swal.fire('Error', 'เกิดข้อผิดพลาดในการเชื่อมต่อ', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalBtnText;
+            }
+        }
+
+        // 4. ฟังก์ชันลบข้อมูล (DELETE)
+        async function deleteItem(name) {
+            const { value: password } = await Swal.fire({
+                title: 'ยืนยันการลบ?',
+                text: `คุณต้องการลบกลุ่ม "${name}" ใช่หรือไม่?`,
+                icon: 'warning',
+                input: 'password',
+                inputPlaceholder: 'กรอกรหัสผ่าน Admin เพื่อยืนยัน',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                confirmButtonText: 'ลบข้อมูล',
+                cancelButtonText: 'ยกเลิก'
+            });
+
+            if (password) {
+                Swal.fire({ title: 'กำลังลบ...', didOpen: () => Swal.showLoading() });
+                
+                try {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({ action: 'delete', name: name, password: password })
+                    });
+                    const res = await response.json();
+                    
+                    if (res.success) {
+                        Swal.fire('เรียบร้อย', 'ลบข้อมูลสำเร็จแล้ว', 'success');
+                        loadData();
+                    } else {
+                        Swal.fire('ไม่สำเร็จ', res.message, 'error');
+                    }
+                } catch (error) {
+                    Swal.fire('Error', 'เชื่อมต่อ Server ไม่ได้', 'error');
+                }
+            }
+        }
+
+        // --- Helper Functions ---
+        function setLoading(isLoading) {
+            const loader = document.getElementById('loading');
+            const list = document.getElementById('listContainer');
+            const empty = document.getElementById('emptyState');
+            
+            if (isLoading) {
+                loader.classList.remove('hidden');
+                list.classList.add('hidden');
+                empty.classList.add('hidden');
+            } else {
+                loader.classList.add('hidden');
+            }
+        }
+
+        function openModal() {
+            document.getElementById('modal').classList.remove('hidden');
+            document.getElementById('groupName').value = '';
+            document.getElementById('groupId').value = '';
+            document.getElementById('adminPassword').value = ''; // เคลียร์รหัสผ่านทุกครั้ง
+            document.getElementById('modalTitle').innerText = 'ลงทะเบียนข้อมูลใหม่';
+            isEditing = false;
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.add('hidden');
+        }
+
+        function prepareEdit(name, id) {
+            openModal();
+            document.getElementById('modalTitle').innerText = 'แก้ไขข้อมูล';
+            document.getElementById('groupName').value = name;
+            document.getElementById('originalName').value = name;
+            document.getElementById('groupId').value = id;
+            isEditing = true;
+        }
+    </script>
+</body>
+</html>
