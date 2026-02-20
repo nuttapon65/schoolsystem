@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>ติดตามคำสั่งซื้อ — โรงเรียนอนุบาลเลย</title>
+
+    <!-- LIFF SDK -->
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --primary: #1A237E;
+            --accent: #E91E63;
+            --green: #2E7D32;
+            --orange: #E65100;
+            --bg: #F0F4FF;
+            --card: #ffffff;
+            --text: #1a1a2e;
+            --muted: #64748b;
+            --radius: 20px;
+            --shadow: 0 4px 24px rgba(0, 0, 0, 0.10);
+        }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 20px;
+            line-height: 1.6;
+            min-height: 100vh;
+            padding-bottom: 60px;
+        }
+
+        /* ===== HEADER ===== */
+        .app-header {
+            background: linear-gradient(135deg, #1565C0 0%, #0D47A1 100%);
+            color: white;
+            padding: 24px 20px 32px;
+            text-align: center;
+        }
+
+        .app-header .icon {
+            font-size: 52px;
+            margin-bottom: 8px;
+        }
+
+        .app-header h1 {
+            font-size: 26px;
+            font-weight: 800;
+        }
+
+        .app-header p {
+            font-size: 17px;
+            opacity: 0.85;
+            margin-top: 4px;
+        }
+
+        .line-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.18);
+            border: 2px solid rgba(255, 255, 255, 0.35);
+            border-radius: 50px;
+            padding: 8px 18px;
+            margin-top: 14px;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .line-pill img {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+
+        /* ===== MAIN ===== */
+        .main-wrap {
+            max-width: 540px;
+            margin: 0 auto;
+            padding: 24px 16px 0;
+        }
+
+        /* ===== CARD ===== */
+        .card {
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 28px 24px;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .icon-circle {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: #E8EAF6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: var(--primary);
+            flex-shrink: 0;
+        }
+
+        /* ===== SEARCH FORM ===== */
+        .field-label {
+            display: block;
+            font-size: 19px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .field-input {
+            width: 100%;
+            padding: 20px 18px;
+            font-size: 24px;
+            font-family: 'Sarabun', sans-serif;
+            border: 2.5px solid #CBD5E1;
+            border-radius: 14px;
+            background: #F8FAFC;
+            color: var(--text);
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+            letter-spacing: 2px;
+            text-align: center;
+        }
+
+        .field-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(26, 35, 126, 0.12);
+            background: white;
+        }
+
+        .btn-search {
+            width: 100%;
+            margin-top: 18px;
+            padding: 22px;
+            background: linear-gradient(135deg, var(--primary), #283593);
+            color: white;
+            border: none;
+            border-radius: 60px;
+            font-size: 22px;
+            font-weight: 800;
+            font-family: 'Sarabun', sans-serif;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            box-shadow: 0 6px 20px rgba(26, 35, 126, 0.3);
+            transition: opacity 0.2s;
+        }
+
+        .btn-search:active {
+            opacity: 0.85;
+        }
+
+        .btn-search:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* ===== RESULT CARD ===== */
+        #result-wrap {
+            display: none;
+        }
+
+        .order-header {
+            background: linear-gradient(135deg, var(--primary), #283593);
+            border-radius: 18px 18px 0 0;
+            padding: 20px 24px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .order-header .oname {
+            font-size: 22px;
+            font-weight: 800;
+        }
+
+        .order-header .oamt {
+            font-size: 18px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-weight: 700;
+        }
+
+        .order-body {
+            border: 2.5px solid #E2E8F0;
+            border-top: none;
+            border-radius: 0 0 18px 18px;
+            padding: 24px;
+        }
+
+        /* ===== TIMELINE ===== */
+        .timeline {
+            position: relative;
+            padding-left: 28px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 12px;
+            top: 8px;
+            bottom: 8px;
+            width: 3px;
+            background: #E2E8F0;
+            border-radius: 3px;
+        }
+
+        .tl-item {
+            position: relative;
+            margin-bottom: 28px;
+        }
+
+        .tl-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .tl-dot {
+            position: absolute;
+            left: -22px;
+            top: 4px;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #CBD5E1;
+            border: 3px solid white;
+            box-shadow: 0 0 0 2px #CBD5E1;
+        }
+
+        .tl-item.done .tl-dot {
+            background: var(--green);
+            box-shadow: 0 0 0 2px var(--green);
+        }
+
+        .tl-item.active .tl-dot {
+            background: var(--accent);
+            box-shadow: 0 0 0 3px rgba(233, 30, 99, 0.25);
+            animation: pulse-dot 1.5s infinite;
+        }
+
+        @keyframes pulse-dot {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 3px rgba(233, 30, 99, 0.25);
+            }
+
+            50% {
+                box-shadow: 0 0 0 8px rgba(233, 30, 99, 0.10);
+            }
+        }
+
+        .tl-label {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--text);
+        }
+
+        .tl-item.pending .tl-label {
+            color: #94A3B8;
+        }
+
+        .tl-date {
+            font-size: 16px;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+
+        .tl-extra {
+            margin-top: 10px;
+        }
+
+        /* STATUS BADGE */
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 18px;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .pill-pending {
+            background: #FFF7ED;
+            color: var(--orange);
+            border: 2px solid #FED7AA;
+        }
+
+        .pill-slip {
+            background: #FFFBEB;
+            color: #92400E;
+            border: 2px solid #FCD34D;
+        }
+
+        .pill-confirm {
+            background: #F0FDF4;
+            color: var(--green);
+            border: 2px solid #86EFAC;
+        }
+
+        .pill-rejected {
+            background: #FFF1F2;
+            color: #BE123C;
+            border: 2px solid #FECDD3;
+        }
+
+        /* ===== ITEMS LIST ===== */
+        .order-items-box {
+            background: #F8FAFC;
+            border: 2px solid #E2E8F0;
+            border-radius: 14px;
+            padding: 18px;
+            margin-bottom: 20px;
+        }
+
+        .order-item-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1.5px solid #E2E8F0;
+            font-size: 18px;
+            gap: 8px;
+        }
+
+        .order-item-row:last-child {
+            border-bottom: none;
+        }
+
+        .order-item-row .iname {
+            font-weight: 700;
+            flex: 1;
+        }
+
+        .order-item-row .iprice {
+            color: var(--primary);
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        /* ===== UPLOAD SLIP ===== */
+        .upload-zone {
+            border: 3px dashed #93C5FD;
+            border-radius: 16px;
+            padding: 28px 20px;
+            text-align: center;
+            background: #EFF6FF;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 14px;
+        }
+
+        .upload-zone:active {
+            background: #DBEAFE;
+        }
+
+        .upload-zone .uz-icon {
+            font-size: 44px;
+            color: #3B82F6;
+            margin-bottom: 10px;
+        }
+
+        .upload-zone p {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1D4ED8;
+        }
+
+        .upload-zone small {
+            font-size: 16px;
+            color: var(--muted);
+        }
+
+        #slip-preview {
+            display: none;
+            margin-top: 14px;
+            width: 100%;
+            border-radius: 14px;
+            max-height: 300px;
+            object-fit: contain;
+            border: 2.5px solid #93C5FD;
+        }
+
+        .btn-upload {
+            width: 100%;
+            margin-top: 14px;
+            padding: 20px;
+            background: linear-gradient(135deg, #1565C0, #1976D2);
+            color: white;
+            border: none;
+            border-radius: 60px;
+            font-size: 20px;
+            font-weight: 800;
+            font-family: 'Sarabun', sans-serif;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 16px rgba(21, 101, 192, 0.3);
+        }
+
+        .btn-upload:active {
+            opacity: 0.85;
+        }
+
+        .btn-upload:disabled {
+            opacity: 0.6;
+        }
+
+        /* ===== BANK BOX (for unpaid state) ===== */
+        .bank-box {
+            background: linear-gradient(135deg, #1565C0, #0D47A1);
+            border-radius: 16px;
+            padding: 22px;
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        .acc-num {
+            font-size: 30px;
+            font-weight: 800;
+            letter-spacing: 3px;
+        }
+
+        .copy-btn {
+            margin-top: 14px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            color: white;
+            border-radius: 50px;
+            padding: 10px 20px;
+            font-size: 17px;
+            font-weight: 700;
+            font-family: 'Sarabun', sans-serif;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* ===== NOTICE ===== */
+        .notice-box {
+            background: #FFFBEB;
+            border: 2px solid #FCD34D;
+            border-radius: 14px;
+            padding: 16px 18px;
+            font-size: 17px;
+            color: #92400E;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+        }
+
+        .notice-box i {
+            margin-top: 2px;
+            flex-shrink: 0;
+            color: #D97706;
+        }
+
+        /* ===== ORDER AGAIN BTN ===== */
+        .btn-order-again {
+            width: 100%;
+            padding: 20px;
+            background: linear-gradient(135deg, var(--accent), #C2185B);
+            color: white;
+            border: none;
+            border-radius: 60px;
+            font-size: 20px;
+            font-weight: 800;
+            font-family: 'Sarabun', sans-serif;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 16px rgba(233, 30, 99, 0.35);
+            margin-top: 12px;
+        }
+
+        /* ===== NOT FOUND ===== */
+        .not-found-box {
+            text-align: center;
+            padding: 32px 20px;
+        }
+
+        .not-found-box .nf-icon {
+            font-size: 64px;
+            margin-bottom: 12px;
+        }
+
+        .not-found-box h3 {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .not-found-box p {
+            font-size: 18px;
+            color: var(--muted);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ===== HEADER ===== -->
+    <div class="app-header">
+        <div class="icon">📦</div>
+        <h1>ติดตามคำสั่งซื้อ</h1>
+        <p>โรงเรียนอนุบาลเลย — เสื้อครบรอบ 75 ปี</p>
+        <div id="line-pill" class="line-pill" style="display:none;">
+            <img id="line-avatar" src="" alt="LINE">
+            <span id="line-name">กำลังโหลด...</span>
+        </div>
+    </div>
+
+    <div class="main-wrap">
+
+        <!-- ===== SEARCH CARD ===== -->
+        <div class="card">
+            <div class="card-title">
+                <span class="icon-circle"><i class="fas fa-search"></i></span>
+                ค้นหาด้วยเบอร์โทรศัพท์
+            </div>
+            <label class="field-label" for="search-phone">กรอกเบอร์โทรที่ใช้สั่งจอง</label>
+            <input class="field-input" id="search-phone" type="tel" inputmode="tel" placeholder="0812345678"
+                maxlength="10">
+            <button class="btn-search" id="search-btn" onclick="searchOrder()">
+                <i class="fas fa-search"></i> ค้นหา
+            </button>
+        </div>
+
+        <!-- ===== RESULT ===== -->
+        <div id="result-wrap">
+
+            <!-- Order card -->
+            <div id="result-order-card"></div>
+
+            <!-- Not found -->
+            <div id="result-not-found" class="card not-found-box" style="display:none;">
+                <div class="nf-icon">🔍</div>
+                <h3>ไม่พบข้อมูล</h3>
+                <p>ไม่พบรายการสั่งจองสำหรับ<br>เบอร์โทรนี้ กรุณาตรวจสอบอีกครั้ง</p>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Hidden file input for slip upload -->
+    <input type="file" id="slip-input" accept="image/*" style="display:none" onchange="previewSlip(this)">
+
+    <!-- ============================================================
+     JAVASCRIPT
+============================================================ -->
+    <script>
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyzukc86Jx7CRLVUnrZw-OCzoOoWOGzoC2cEbOeTqWesKPe_w27QEOmHzSw_sUFOPSXcA/exec';
+        const LIFF_ID = '2008830546-kUtMFdic'; // ⚠️ เปลี่ยนเป็น LIFF ID ของหน้าติดตาม
+        const BANK_ACCOUNT = '079-2-83430-8';     // ⚠️ เปลี่ยนเป็นเลขบัญชีจริง
+
+        let lineProfile = null;
+        let currentOrderPhone = '';
+
+        // ===== LIFF INIT =====
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                await liff.init({ liffId: LIFF_ID });
+                if (liff.isLoggedIn()) {
+                    lineProfile = await liff.getProfile();
+                    document.getElementById('line-name').textContent = lineProfile.displayName;
+                    document.getElementById('line-avatar').src = lineProfile.pictureUrl || '';
+                    document.getElementById('line-pill').style.display = 'inline-flex';
+                } else {
+                    liff.login();
+                }
+            } catch (e) {
+                console.warn('LIFF init failed (testing outside LINE):', e.message);
+            }
+
+            document.getElementById('search-phone').addEventListener('keydown', e => {
+                if (e.key === 'Enter') searchOrder();
+            });
+        });
+
+        // ===== SEARCH =====
+        async function searchOrder() {
+            const phone = document.getElementById('search-phone').value.trim();
+            if (phone.length < 9) {
+                Swal.fire({ icon: 'warning', title: 'เบอร์ไม่ถูกต้อง', text: 'กรุณากรอกเบอร์อย่างน้อย 9 หลัก', confirmButtonColor: '#1A237E' });
+                return;
+            }
+
+            const btn = document.getElementById('search-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังค้นหา...';
+            document.getElementById('result-wrap').style.display = 'none';
+
+            try {
+                const res = await fetch(`${SCRIPT_URL}?action=search&phone=${phone}`);
+                const data = await res.json();
+
+                document.getElementById('result-wrap').style.display = 'block';
+
+                if (data.result === 'success') {
+                    currentOrderPhone = phone;
+                    renderResult(data.data);
+                } else {
+                    document.getElementById('result-order-card').innerHTML = '';
+                    document.getElementById('result-not-found').style.display = 'block';
+                }
+            } catch (err) {
+                Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถเชื่อมต่อได้ กรุณาลองใหม่', confirmButtonColor: '#1A237E' });
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-search"></i> ค้นหา';
+                document.getElementById('result-wrap').scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        // ===== RENDER RESULT =====
+        function renderResult(order) {
+            document.getElementById('result-not-found').style.display = 'none';
+
+            const status = order.status || '';
+            const hasSlip = order.slipUrl && order.slipUrl.length > 10 && !order.slipUrl.includes('No File');
+
+            const isConfirmed = status.includes('Confirm') || status.includes('เรียบร้อย');
+            const isRejected = status.includes('Reject') || status.includes('ยกเลิก') || status.includes('ไม่ถูกต้อง');
+            const isCheckSlip = !isConfirmed && !isRejected && hasSlip;
+            const isPending = !isConfirmed && !isRejected && !hasSlip;
+
+            // Status pill
+            let pillHtml = '';
+            if (isConfirmed) pillHtml = `<span class="status-pill pill-confirm"><i class="fas fa-check-circle"></i> ยืนยันแล้ว</span>`;
+            else if (isRejected) pillHtml = `<span class="status-pill pill-rejected"><i class="fas fa-times-circle"></i> ไม่อนุมัติ</span>`;
+            else if (isCheckSlip) pillHtml = `<span class="status-pill pill-slip"><i class="fas fa-clock"></i> รอตรวจสลิป</span>`;
+            else pillHtml = `<span class="status-pill pill-pending"><i class="fas fa-hourglass-half"></i> รอชำระเงิน</span>`;
+
+            // Parse items
+            const itemRows = parseItems(order.items);
+
+            // Date
+            const orderDate = order.timestamp ? new Date(order.timestamp).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' }) : '—';
+
+            // Timeline steps
+            const step1Done = true;
+            const step2Done = isCheckSlip || isConfirmed;
+            const step2Active = isPending;
+            const step3Done = isConfirmed || isRejected;
+            const step3Active = isCheckSlip;
+
+            function tClass(done, active) {
+                if (done) return 'tl-item done';
+                if (active) return 'tl-item active';
+                return 'tl-item pending';
+            }
+
+            // Extra content per step
+            let step2Extra = '';
+            if (isPending) {
+                step2Extra = `
+            <div class="tl-extra">
+                ${bankBoxHtml()}
+                <div class="notice-box"><i class="fas fa-info-circle"></i><div>โอนเงินแล้วกด <strong>"อัปโหลดสลิป"</strong> ด้านล่าง</div></div>
+                <div class="upload-zone" onclick="document.getElementById('slip-input').click()">
+                    <div class="uz-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                    <p>กดที่นี่เพื่ออัปโหลดสลิป</p>
+                    <small>รองรับรูปภาพทุกประเภท</small>
+                </div>
+                <img id="slip-preview" src="" alt="ตัวอย่างสลิป">
+                <button class="btn-upload" id="upload-btn" onclick="uploadSlip()">
+                    <i class="fas fa-paper-plane"></i> ส่งหลักฐานการโอน
+                </button>
+            </div>`;
+            } else if (isCheckSlip) {
+                step2Extra = `
+            <div class="tl-extra">
+                <span class="status-pill pill-slip" style="font-size:17px;">
+                    <i class="fas fa-clock"></i> ส่งสลิปแล้ว — รอเจ้าหน้าที่ตรวจสอบ
+                </span>
+            </div>`;
+            }
+
+            let step3Extra = '';
+            if (isConfirmed) {
+                step3Extra = `
+            <div class="tl-extra">
+                <span class="status-pill pill-confirm" style="font-size:17px;">
+                    <i class="fas fa-check-circle"></i> อนุมัติแล้ว — สินค้าพร้อมจัดส่ง/รับ
+                </span>
+            </div>`;
+            } else if (isRejected) {
+                step3Extra = `
+            <div class="tl-extra">
+                <span class="status-pill pill-rejected" style="font-size:17px;">
+                    <i class="fas fa-times-circle"></i> ${status}
+                </span>
+            </div>`;
+            }
+
+            const html = `
+        <!-- Header -->
+        <div class="order-header">
+            <div>
+                <div class="oname"><i class="fas fa-user mr-1"></i> ${order.name || '—'}</div>
+                <div style="font-size:15px;opacity:0.8;margin-top:2px;">${orderDate}</div>
+            </div>
+            <div class="oamt">฿${Number(order.total || 0).toLocaleString()}</div>
+        </div>
+
+        <div class="order-body">
+            <!-- Status -->
+            <div style="margin-bottom:20px;">${pillHtml}</div>
+
+            <!-- Items -->
+            <div class="notice-box" style="margin-bottom:12px;">
+                <i class="fas fa-tshirt"></i>
+                <div><strong>รายการสั่งซื้อ</strong></div>
+            </div>
+            <div class="order-items-box">
+                ${itemRows}
+                <div class="order-item-row" style="border-top:2.5px solid #CBD5E1;margin-top:4px;padding-top:14px;">
+                    <span class="iname" style="color:var(--primary);">ยอดรวม</span>
+                    <span class="iprice" style="font-size:22px;">฿${Number(order.total || 0).toLocaleString()}</span>
+                </div>
+            </div>
+
+            <!-- Delivery -->
+            <div style="margin-bottom:20px;">
+                <span style="font-weight:700;color:var(--muted);font-size:17px;">วิธีรับสินค้า:</span>
+                <span style="font-weight:700;margin-left:8px;">
+                    ${(order.delivery || '').toLowerCase().includes('ship') || (order.delivery || '').includes('จัดส่ง')
+                    ? '🚚 จัดส่งตามที่อยู่' : '🏫 รับด้วยตนเองที่โรงเรียน'}
+                </span>
+            </div>
+
+            <!-- Timeline -->
+            <div style="font-size:19px;font-weight:800;color:var(--primary);margin-bottom:16px;">
+                <i class="fas fa-stream" style="margin-right:8px;"></i>ความคืบหน้า
+            </div>
+            <div class="timeline">
+                <div class="${tClass(step1Done, false)}">
+                    <div class="tl-dot"></div>
+                    <div class="tl-label"><i class="fas fa-check-circle" style="color:var(--green);margin-right:6px;"></i>รับคำสั่งซื้อแล้ว</div>
+                    <div class="tl-date">${orderDate}</div>
+                </div>
+                <div class="${tClass(step2Done, step2Active)}">
+                    <div class="tl-dot"></div>
+                    <div class="tl-label">ตรวจสอบการชำระเงิน</div>
+                    ${step2Extra}
+                </div>
+                <div class="${tClass(step3Done, step3Active)}">
+                    <div class="tl-dot"></div>
+                    <div class="tl-label">จัดส่ง / พร้อมรับ</div>
+                    ${step3Extra}
+                </div>
+            </div>
+
+            <!-- CTA -->
+            <button class="btn-order-again" onclick="window.location.href='liff.html'">
+                <i class="fas fa-plus-circle"></i> สั่งจองเพิ่ม
+            </button>
+        </div>
+    `;
+
+            document.getElementById('result-order-card').innerHTML = `<div class="card" style="padding:0;overflow:hidden;">${html}</div>`;
+        }
+
+        // ===== HELPERS =====
+        function parseItems(rawItems) {
+            if (!rawItems) return '<div class="order-item-row"><span class="iname">—</span></div>';
+            // Format: "แบบ A (adult_M) x2, แบบ B (child_S) x1"
+            const parts = rawItems.split(',').map(s => s.trim()).filter(Boolean);
+            if (parts.length === 0) return `<div class="order-item-row"><span class="iname">${rawItems}</span></div>`;
+
+            return parts.map(p => {
+                // Try to parse structured format
+                const m = p.match(/แบบ\s*([A-C])\s*\(([^)]+)\)\s*x(\d+)/i);
+                if (m) {
+                    const style = m[1], sizeRaw = m[2], qty = parseInt(m[3]);
+                    const cat = sizeRaw.startsWith('adult') ? 'ผู้ใหญ่' : 'เด็ก';
+                    const sz = sizeRaw.replace(/adult_|child_/g, '');
+                    return `<div class="order-item-row">
+                <span class="iname">เสื้อแบบ ${style} — ${cat} ${sz}</span>
+                <span class="iprice">${qty} ตัว × ฿299 = ฿${(qty * 299).toLocaleString()}</span>
+            </div>`;
+                }
+                return `<div class="order-item-row"><span class="iname">${p}</span></div>`;
+            }).join('');
+        }
+
+        function bankBoxHtml() {
+            return `
+        <div class="bank-box" style="margin-bottom:16px;">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+                <img src="https://www.ttbbank.com/assets/half-assets/logo-ttb-banner.png"
+                     alt="TTB"
+                     style="height:32px;background:white;border-radius:8px;padding:3px 8px;object-fit:contain;">
+                <span style="font-size:17px;opacity:0.85;">ธนาคารทหารไทยธนชาต</span>
+            </div>
+            <div style="background:rgba(255,255,255,0.15);border-radius:12px;padding:12px 16px;margin-bottom:10px;">
+                <div style="font-size:13px;opacity:0.7;letter-spacing:1px;margin-bottom:2px;">หมายเลขบัญชี</div>
+                <div class="acc-num">${BANK_ACCOUNT}</div>
+                <div style="font-size:15px;opacity:0.8;margin-top:2px;">ชื่อบัญชี: โรงเรียนอนุบาลเลย</div>
+            </div>
+            <button class="copy-btn" onclick="copyAccNum()"><i class="fas fa-copy"></i> คัดลอกเลขบัญชี</button>
+        </div>`;
+        }
+
+        // ===== SLIP PREVIEW =====
+        function previewSlip(input) {
+            if (!input.files[0]) return;
+            const reader = new FileReader();
+            reader.onload = e => {
+                const img = document.getElementById('slip-preview');
+                if (img) { img.src = e.target.result; img.style.display = 'block'; }
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+
+        // ===== UPLOAD SLIP =====
+        async function uploadSlip() {
+            const fileInput = document.getElementById('slip-input');
+            if (!fileInput.files[0]) {
+                Swal.fire({ icon: 'warning', title: 'ยังไม่ได้เลือกไฟล์', text: 'กรุณาเลือกรูปสลิปก่อนกดส่ง', confirmButtonColor: '#1A237E' });
+                return;
+            }
+
+            const btn = document.getElementById('upload-btn');
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังอัปโหลด...'; }
+
+            try {
+                const file = fileInput.files[0];
+                const base64 = await new Promise(res => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => res(reader.result.split(',')[1]);
+                    reader.readAsDataURL(file);
+                });
+
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'update_slip',
+                        phone: currentOrderPhone,
+                        slipBase64: base64,
+                        mimeType: file.type
+                    })
+                });
+
+                await Swal.fire({
+                    icon: 'success',
+                    title: 'ส่งสลิปสำเร็จ! ✅',
+                    text: 'รอเจ้าหน้าที่ตรวจสอบ 1-2 วันทำการ',
+                    confirmButtonColor: '#1A237E',
+                    confirmButtonText: 'ดูสถานะล่าสุด'
+                });
+
+                searchOrder(); // Refresh
+            } catch (err) {
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i> ส่งหลักฐานการโอน'; }
+                Swal.fire({ icon: 'error', title: 'อัปโหลดไม่สำเร็จ', text: 'กรุณาลองใหม่อีกครั้ง', confirmButtonColor: '#1A237E' });
+            }
+        }
+
+        // ===== COPY ACCOUNT =====
+        function copyAccNum() {
+            navigator.clipboard.writeText(BANK_ACCOUNT.replace(/-/g, '')).then(() => {
+                Swal.fire({ toast: true, position: 'top', icon: 'success', title: 'คัดลอกเลขบัญชีแล้ว!', timer: 1800, showConfirmButton: false });
+            });
+        }
+    </script>
+</body>
+
+</html>

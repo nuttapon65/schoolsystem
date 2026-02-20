@@ -1,0 +1,1572 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>สั่งจองเสื้อ — โรงเรียนอนุบาลเลย</title>
+
+    <!-- LIFF SDK -->
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --primary: #1A237E;
+            --accent: #E91E63;
+            --green: #2E7D32;
+            --bg: #F0F4FF;
+            --card: #ffffff;
+            --text: #1a1a2e;
+            --muted: #64748b;
+            --radius: 20px;
+            --shadow: 0 4px 24px rgba(0, 0, 0, 0.10);
+        }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 20px;
+            line-height: 1.6;
+            min-height: 100vh;
+            padding-bottom: 40px;
+        }
+
+        /* ===== HEADER ===== */
+        .app-header {
+            background: linear-gradient(135deg, var(--primary) 0%, #283593 100%);
+            color: white;
+            padding: 20px 20px 28px;
+            text-align: center;
+            position: relative;
+        }
+
+        .app-header .school-logo {
+            font-size: 42px;
+            margin-bottom: 6px;
+        }
+
+        .app-header h1 {
+            font-size: 26px;
+            font-weight: 800;
+            line-height: 1.3;
+        }
+
+        .app-header p {
+            font-size: 17px;
+            opacity: 0.85;
+            margin-top: 4px;
+        }
+
+        /* LINE user pill */
+        .line-user-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.18);
+            border: 2px solid rgba(255, 255, 255, 0.35);
+            border-radius: 50px;
+            padding: 8px 18px;
+            margin-top: 14px;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .line-user-pill img {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+
+        /* ===== STEP PROGRESS ===== */
+        .progress-bar {
+            background: white;
+            padding: 16px 20px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            border-bottom: 2px solid #e2e8f0;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+        }
+
+        .step-dot {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .step-circle {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: #e2e8f0;
+            color: #94a3b8;
+            font-size: 20px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid #e2e8f0;
+            transition: all 0.3s;
+        }
+
+        .step-dot.active .step-circle {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            box-shadow: 0 0 0 4px rgba(233, 30, 99, 0.2);
+        }
+
+        .step-dot.done .step-circle {
+            background: var(--green);
+            border-color: var(--green);
+            color: white;
+        }
+
+        .step-label {
+            font-size: 13px;
+            font-weight: 700;
+            color: #94a3b8;
+            white-space: nowrap;
+        }
+
+        .step-dot.active .step-label {
+            color: var(--accent);
+        }
+
+        .step-dot.done .step-label {
+            color: var(--green);
+        }
+
+        .step-line {
+            flex: 1;
+            height: 3px;
+            background: #e2e8f0;
+            margin: 0 6px;
+            margin-bottom: 20px;
+            transition: background 0.3s;
+            min-width: 20px;
+        }
+
+        .step-line.done {
+            background: var(--green);
+        }
+
+        /* ===== MAIN WRAP ===== */
+        .main-wrap {
+            max-width: 560px;
+            margin: 0 auto;
+            padding: 24px 16px 0;
+        }
+
+        /* ===== CARD ===== */
+        .card {
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 28px 24px;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-title .icon-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #E8EAF6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: var(--primary);
+        }
+
+        /* ===== FORM FIELDS ===== */
+        .field-group {
+            margin-bottom: 20px;
+        }
+
+        .field-label {
+            display: block;
+            font-size: 19px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+
+        .field-label .req {
+            color: var(--accent);
+        }
+
+        .field-input,
+        .field-select,
+        .field-textarea {
+            width: 100%;
+            padding: 18px 16px;
+            font-size: 20px;
+            font-family: 'Sarabun', sans-serif;
+            border: 2.5px solid #CBD5E1;
+            border-radius: 14px;
+            background: #F8FAFC;
+            color: var(--text);
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .field-input:focus,
+        .field-select:focus,
+        .field-textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(26, 35, 126, 0.12);
+            background: white;
+        }
+
+        .field-select {
+            cursor: pointer;
+        }
+
+        /* ===== STYLE CARDS (แบบ A/B/C) ===== */
+        .style-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .style-card-label {
+            cursor: pointer;
+            display: block;
+        }
+
+        .style-card-label input {
+            display: none;
+        }
+
+        .style-card-inner {
+            border: 3px solid #e2e8f0;
+            border-radius: 16px;
+            overflow: hidden;
+            transition: all 0.25s;
+            background: white;
+            position: relative;
+        }
+
+        .style-card-label input:checked+.style-card-inner {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px rgba(233, 30, 99, 0.15);
+            transform: scale(1.03);
+        }
+
+        .style-check {
+            display: none;
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            width: 30px;
+            height: 30px;
+            background: var(--accent);
+            border-radius: 50%;
+            color: white;
+            font-size: 14px;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+            font-weight: 800;
+        }
+
+        .style-card-label input:checked+.style-card-inner .style-check {
+            display: flex;
+        }
+
+        .style-card-inner img {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+            display: block;
+        }
+
+        .style-card-name {
+            text-align: center;
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--primary);
+            padding: 10px 4px 12px;
+        }
+
+        /* ===== SIZE GRID (Big tap targets) ===== */
+        .size-section-title {
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 16px 0 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .size-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .size-btn {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .size-btn input {
+            display: none;
+        }
+
+        .size-btn-inner {
+            min-width: 64px;
+            padding: 14px 10px;
+            border: 2.5px solid #CBD5E1;
+            border-radius: 14px;
+            background: white;
+            text-align: center;
+            font-size: 20px;
+            font-weight: 700;
+            color: #475569;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .size-btn input:checked+.size-btn-inner {
+            border-color: var(--primary);
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 14px rgba(26, 35, 126, 0.3);
+        }
+
+        .size-qty-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-top: 6px;
+        }
+
+        .qty-btn {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            border: none;
+            font-size: 26px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s;
+            flex-shrink: 0;
+        }
+
+        .qty-minus {
+            background: #FEE2E2;
+            color: #DC2626;
+        }
+
+        .qty-minus:active {
+            background: #DC2626;
+            color: white;
+        }
+
+        .qty-plus {
+            background: #DCFCE7;
+            color: #16A34A;
+        }
+
+        .qty-plus:active {
+            background: #16A34A;
+            color: white;
+        }
+
+        .qty-display {
+            font-size: 28px;
+            font-weight: 800;
+            min-width: 44px;
+            text-align: center;
+            color: var(--text);
+        }
+
+        .qty-label {
+            font-size: 17px;
+            color: var(--muted);
+        }
+
+        /* ===== ITEM ROWS ===== */
+        .item-row {
+            background: #F8FAFC;
+            border: 2px solid #E2E8F0;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            position: relative;
+        }
+
+        .item-row-hdr {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .item-row-num {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .item-remove-btn {
+            background: #FEE2E2;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            color: #DC2626;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .item-remove-btn:active {
+            background: #DC2626;
+            color: white;
+        }
+
+        /* ===== ADD ITEM BTN ===== */
+        .add-item-btn {
+            width: 100%;
+            padding: 20px;
+            border: 3px dashed #CBD5E1;
+            border-radius: var(--radius);
+            background: white;
+            color: var(--primary);
+            font-size: 20px;
+            font-weight: 700;
+            font-family: 'Sarabun', sans-serif;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.2s;
+            margin-bottom: 24px;
+        }
+
+        .add-item-btn:active {
+            background: #E8EAF6;
+        }
+
+        /* ===== DELIVERY CARDS ===== */
+        .delivery-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        .delivery-label {
+            cursor: pointer;
+            display: block;
+        }
+
+        .delivery-label input {
+            display: none;
+        }
+
+        .delivery-inner {
+            border: 3px solid #CBD5E1;
+            border-radius: 16px;
+            padding: 22px 14px;
+            text-align: center;
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .delivery-label input:checked+.delivery-inner {
+            border-color: var(--primary);
+            background: #E8EAF6;
+            box-shadow: 0 0 0 4px rgba(26, 35, 126, 0.12);
+        }
+
+        .delivery-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+
+        .delivery-name {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .delivery-sub {
+            font-size: 15px;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        /* ===== SLIP UPLOAD ===== */
+        .slip-upload-zone {
+            border: 3px dashed #93C5FD;
+            border-radius: 16px;
+            padding: 28px;
+            text-align: center;
+            background: #EFF6FF;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .slip-upload-zone:active {
+            background: #DBEAFE;
+        }
+
+        .slip-upload-zone .icon {
+            font-size: 48px;
+            color: #3B82F6;
+            margin-bottom: 10px;
+        }
+
+        .slip-upload-zone p {
+            font-size: 19px;
+            font-weight: 700;
+            color: #1D4ED8;
+        }
+
+        .slip-upload-zone small {
+            font-size: 16px;
+            color: var(--muted);
+        }
+
+        #slip-preview {
+            display: none;
+            margin-top: 14px;
+            width: 100%;
+            border-radius: 14px;
+            max-height: 280px;
+            object-fit: contain;
+            border: 2px solid #93C5FD;
+        }
+
+        /* ===== TOTAL BAR ===== */
+        .total-bar {
+            background: linear-gradient(135deg, var(--primary), #283593);
+            color: white;
+            border-radius: var(--radius);
+            padding: 22px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            box-shadow: 0 6px 24px rgba(26, 35, 126, 0.3);
+        }
+
+        .total-bar .label {
+            font-size: 19px;
+            font-weight: 700;
+            opacity: 0.9;
+        }
+
+        .total-bar .amount {
+            font-size: 32px;
+            font-weight: 800;
+        }
+
+        .total-bar .qty {
+            font-size: 16px;
+            opacity: 0.8;
+            margin-top: 2px;
+        }
+
+        /* ===== BUTTONS ===== */
+        .btn-primary {
+            width: 100%;
+            padding: 22px;
+            background: linear-gradient(135deg, var(--accent), #C2185B);
+            color: white;
+            border: none;
+            border-radius: 60px;
+            font-size: 22px;
+            font-weight: 800;
+            font-family: 'Sarabun', sans-serif;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 6px 20px rgba(233, 30, 99, 0.4);
+            transition: all 0.2s;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            width: 100%;
+            padding: 18px;
+            background: white;
+            color: var(--primary);
+            border: 3px solid var(--primary);
+            border-radius: 60px;
+            font-size: 20px;
+            font-weight: 700;
+            font-family: 'Sarabun', sans-serif;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.2s;
+            margin-top: 12px;
+        }
+
+        .btn-secondary:active {
+            background: #E8EAF6;
+        }
+
+        /* ===== STEP CONTAINER ===== */
+        .step-content {
+            display: none;
+        }
+
+        .step-content.active {
+            display: block;
+        }
+
+        /* ===== BANK INFO ===== */
+        .bank-box {
+            background: linear-gradient(135deg, #1565C0, #0D47A1);
+            border-radius: 16px;
+            padding: 22px;
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        .bank-box .bank-name {
+            font-size: 22px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .bank-box .acc-num {
+            font-size: 30px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            margin: 10px 0;
+        }
+
+        .bank-box .acc-holder {
+            font-size: 18px;
+            opacity: 0.85;
+        }
+
+        .copy-btn {
+            margin-top: 14px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            color: white;
+            border-radius: 50px;
+            padding: 10px 20px;
+            font-size: 17px;
+            font-weight: 700;
+            font-family: 'Sarabun', sans-serif;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* ===== REVIEW MODAL ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 200;
+            align-items: flex-end;
+        }
+
+        .modal-overlay.open {
+            display: flex;
+        }
+
+        .modal-sheet {
+            background: white;
+            border-radius: 28px 28px 0 0;
+            padding: 28px 24px 40px;
+            width: 100%;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+
+        .modal-handle {
+            width: 48px;
+            height: 5px;
+            background: #CBD5E1;
+            border-radius: 10px;
+            margin: 0 auto 20px;
+        }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--primary);
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .review-row {
+            display: flex;
+            gap: 12px;
+            padding: 14px 0;
+            border-bottom: 1.5px solid #F1F5F9;
+            font-size: 19px;
+            align-items: flex-start;
+        }
+
+        .review-row:last-child {
+            border-bottom: none;
+        }
+
+        .review-row .rlabel {
+            color: var(--muted);
+            font-weight: 600;
+            min-width: 100px;
+            flex-shrink: 0;
+        }
+
+        .review-row .rval {
+            font-weight: 700;
+            flex: 1;
+        }
+
+        .review-total-row {
+            background: var(--primary);
+            color: white;
+            border-radius: 14px;
+            padding: 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 16px 0;
+            font-size: 22px;
+            font-weight: 800;
+        }
+
+        /* ===== SUCCESS ===== */
+        .success-screen {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .success-screen .big-icon {
+            font-size: 96px;
+            margin-bottom: 16px;
+        }
+
+        .success-screen h2 {
+            font-size: 30px;
+            font-weight: 800;
+            color: var(--green);
+            margin-bottom: 10px;
+        }
+
+        .success-screen p {
+            font-size: 19px;
+            color: var(--muted);
+            line-height: 1.7;
+        }
+
+        .success-screen .order-id-box {
+            background: #F0FDF4;
+            border: 2px solid #86EFAC;
+            border-radius: 14px;
+            padding: 18px;
+            margin: 20px 0;
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--green);
+        }
+
+        /* ===== HELPER ===== */
+        .notice-box {
+            background: #FFFBEB;
+            border: 2px solid #FCD34D;
+            border-radius: 14px;
+            padding: 16px 18px;
+            font-size: 17px;
+            color: #92400E;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+        }
+
+        .notice-box i {
+            margin-top: 2px;
+            flex-shrink: 0;
+            color: #D97706;
+        }
+
+        /* ===== NAV BUTTONS ===== */
+        .nav-row {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .nav-row .btn-back {
+            padding: 18px 24px;
+            border: 3px solid #CBD5E1;
+            border-radius: 60px;
+            background: white;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--muted);
+            font-family: 'Sarabun', sans-serif;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-row .btn-next {
+            flex: 1;
+            padding: 18px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 60px;
+            font-size: 20px;
+            font-weight: 800;
+            font-family: 'Sarabun', sans-serif;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 14px rgba(26, 35, 126, 0.3);
+        }
+
+        .nav-row .btn-next:active {
+            opacity: 0.9;
+        }
+
+        @media (max-width: 400px) {
+            .delivery-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .style-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 8px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ===== HEADER ===== -->
+    <div class="app-header">
+        <div class="school-logo">🏫</div>
+        <h1>สั่งจองเสื้อครบรอบ 75 ปี<br>โรงเรียนอนุบาลเลย</h1>
+        <p>ราคาตัวละ <strong>299 บาท</strong></p>
+        <div id="line-user-pill" class="line-user-pill" style="display:none;">
+            <img id="line-avatar" src="" alt="LINE">
+            <span id="line-display-name">กำลังโหลด...</span>
+        </div>
+    </div>
+
+    <!-- ===== STEP PROGRESS ===== -->
+    <div class="progress-bar">
+        <div class="step-dot active" id="sp1">
+            <div class="step-circle" id="sc1">1</div>
+            <div class="step-label">ข้อมูล</div>
+        </div>
+        <div class="step-line" id="sl1"></div>
+        <div class="step-dot" id="sp2">
+            <div class="step-circle" id="sc2">2</div>
+            <div class="step-label">เสื้อ</div>
+        </div>
+        <div class="step-line" id="sl2"></div>
+        <div class="step-dot" id="sp3">
+            <div class="step-circle" id="sc3">3</div>
+            <div class="step-label">ส่ง/รับ</div>
+        </div>
+        <div class="step-line" id="sl3"></div>
+        <div class="step-dot" id="sp4">
+            <div class="step-circle" id="sc4">4</div>
+            <div class="step-label">สลิป</div>
+        </div>
+        <div class="step-line" id="sl4"></div>
+        <div class="step-dot" id="sp5">
+            <div class="step-circle" id="sc5">✓</div>
+            <div class="step-label">ยืนยัน</div>
+        </div>
+    </div>
+
+    <div class="main-wrap">
+
+        <!-- ======================================================
+     STEP 1: ข้อมูลส่วนตัว
+====================================================== -->
+        <div class="step-content active" id="step1">
+            <div class="card">
+                <div class="card-title">
+                    <span class="icon-circle"><i class="fas fa-user"></i></span>
+                    ข้อมูลผู้สั่งจอง
+                </div>
+
+                <div class="notice-box">
+                    <i class="fas fa-info-circle fa-lg"></i>
+                    <div>กรุณากรอกข้อมูลให้ครบ<br>เพื่อให้ทางโรงเรียนติดต่อได้</div>
+                </div>
+
+                <!-- คำนำหน้า -->
+                <div class="field-group">
+                    <label class="field-label" for="f-prefix">คำนำหน้าชื่อ <span class="req">*</span></label>
+                    <select class="field-select" id="f-prefix">
+                        <option value="">— กรุณาเลือก —</option>
+                        <option value="นาย">นาย</option>
+                        <option value="นาง">นาง</option>
+                        <option value="นางสาว">นางสาว</option>
+                        <option value="ว่าที่ร้อยตรี">ว่าที่ร้อยตรี</option>
+                    </select>
+                </div>
+
+                <!-- ชื่อ-นามสกุล -->
+                <div class="field-group">
+                    <label class="field-label" for="f-name">ชื่อ-นามสกุล <span class="req">*</span></label>
+                    <input class="field-input" id="f-name" type="text" placeholder="เช่น สมหญิง ใจดี"
+                        autocomplete="name">
+                </div>
+
+                <!-- เบอร์โทรศัพท์ -->
+                <div class="field-group">
+                    <label class="field-label" for="f-phone">เบอร์โทรศัพท์ <span class="req">*</span></label>
+                    <input class="field-input" id="f-phone" type="tel" placeholder="0812345678" inputmode="tel"
+                        pattern="[0-9]{9,10}">
+                </div>
+
+                <button class="btn-primary" onclick="goStep(2)">
+                    <i class="fas fa-arrow-right"></i> ต่อไป — เลือกเสื้อ
+                </button>
+            </div>
+        </div>
+
+        <!-- ======================================================
+     STEP 2: เลือกเสื้อ
+====================================================== -->
+        <div class="step-content" id="step2">
+            <div class="card">
+                <div class="card-title">
+                    <span class="icon-circle"><i class="fas fa-tshirt"></i></span>
+                    เลือกแบบและขนาดเสื้อ
+                </div>
+
+                <div id="items-container">
+                    <!-- Dynamic item rows -->
+                </div>
+
+                <button class="add-item-btn" onclick="addItem()">
+                    <i class="fas fa-plus-circle fa-lg"></i> เพิ่มรายการ (แบบเสื้ออีกรายการ)
+                </button>
+
+                <!-- Total bar -->
+                <div class="total-bar">
+                    <div>
+                        <div class="label">ยอดรวม</div>
+                        <div class="qty" id="total-qty">0 รายการ</div>
+                    </div>
+                    <div class="amount" id="total-price">฿0</div>
+                </div>
+            </div>
+
+            <div class="nav-row">
+                <button class="btn-back" onclick="goStep(1)"><i class="fas fa-chevron-left"></i> กลับ</button>
+                <button class="btn-next" onclick="goStep(3)"><i class="fas fa-arrow-right"></i> ต่อไป</button>
+            </div>
+        </div>
+
+        <!-- ======================================================
+     STEP 3: วิธีรับเสื้อ
+====================================================== -->
+        <div class="step-content" id="step3">
+            <div class="card">
+                <div class="card-title">
+                    <span class="icon-circle"><i class="fas fa-truck"></i></span>
+                    วิธีรับเสื้อ
+                </div>
+
+                <div class="delivery-grid">
+                    <label class="delivery-label">
+                        <input type="radio" name="delivery" value="pickup">
+                        <div class="delivery-inner">
+                            <div class="delivery-icon">🏫</div>
+                            <div class="delivery-name">รับเอง</div>
+                            <div class="delivery-sub">ที่โรงเรียน</div>
+                        </div>
+                    </label>
+                    <label class="delivery-label">
+                        <input type="radio" name="delivery" value="shipping">
+                        <div class="delivery-inner">
+                            <div class="delivery-icon">🚚</div>
+                            <div class="delivery-name">จัดส่ง</div>
+                            <div class="delivery-sub">ฟรีค่าส่ง</div>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- Address (shown when shipping) -->
+                <div id="address-wrap" style="display:none; margin-top: 20px;">
+                    <div class="field-group">
+                        <label class="field-label" for="f-address">ที่อยู่สำหรับจัดส่ง <span
+                                class="req">*</span></label>
+                        <textarea class="field-textarea" id="f-address" rows="4"
+                            placeholder="บ้านเลขที่ หมู่ ตรอก/ซอย ถนน ตำบล อำเภอ จังหวัด รหัสไปรษณีย์"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="nav-row">
+                <button class="btn-back" onclick="goStep(2)"><i class="fas fa-chevron-left"></i> กลับ</button>
+                <button class="btn-next" onclick="goStep(4)"><i class="fas fa-arrow-right"></i> ต่อไป</button>
+            </div>
+        </div>
+
+        <!-- ======================================================
+     STEP 4: แนบสลิป (ไม่บังคับ)
+====================================================== -->
+        <div class="step-content" id="step4">
+            <div class="card">
+                <div class="card-title">
+                    <span class="icon-circle"><i class="fas fa-receipt"></i></span>
+                    แนบหลักฐานการโอน
+                </div>
+
+                <!-- Bank Info -->
+                <div class="bank-box">
+                    <!-- Bank Logo Row -->
+                    <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
+                        <img src="https://www.ttbbank.com/assets/half-assets/logo-ttb-banner.png" alt="TTB Bank"
+                            style="height:36px;background:white;border-radius:8px;padding:4px 10px;object-fit:contain;">
+                        <span style="font-size:18px;opacity:0.85;">ธนาคารทหารไทยธนชาต</span>
+                    </div>
+                    <!-- Account -->
+                    <div
+                        style="background:rgba(255,255,255,0.15);border-radius:14px;padding:14px 18px;margin-bottom:12px;">
+                        <div style="font-size:14px;opacity:0.75;margin-bottom:4px;letter-spacing:1px;">หมายเลขบัญชี
+                        </div>
+                        <div class="acc-num" id="bank-acc-num"
+                            style="font-size:32px;font-weight:800;letter-spacing:3px;">xxx-x-xxxxx-x</div>
+                        <div class="acc-holder" style="font-size:16px;opacity:0.85;margin-top:4px;">ชื่อบัญชี:
+                            โรงเรียนอนุบาลเลย</div>
+                    </div>
+                    <button class="copy-btn" onclick="copyAccNum()">
+                        <i class="fas fa-copy"></i> คัดลอกเลขบัญชี
+                    </button>
+                </div>
+
+                <div class="notice-box">
+                    <i class="fas fa-info-circle fa-lg"></i>
+                    <div>แนบสลิปได้เลย <strong>หรือจะแนบทีหลัง</strong>ก็ได้<br>โดยค้นหาด้วยเบอร์โทรในหน้าหลัก</div>
+                </div>
+
+                <!-- Upload Zone -->
+                <input type="file" id="slip-input" accept="image/*" style="display:none" onchange="previewSlip(this)">
+                <div class="slip-upload-zone" onclick="document.getElementById('slip-input').click()">
+                    <div class="icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                    <p>กดที่นี่เพื่ออัปโหลดสลิป</p>
+                    <small>รองรับไฟล์รูปภาพทุกประเภท</small>
+                </div>
+                <img id="slip-preview" src="" alt="ตัวอย่างสลิป">
+            </div>
+
+            <div class="nav-row">
+                <button class="btn-back" onclick="goStep(3)"><i class="fas fa-chevron-left"></i> กลับ</button>
+                <button class="btn-next" onclick="goStep(5)"><i class="fas fa-arrow-right"></i> ตรวจสอบ</button>
+            </div>
+        </div>
+
+        <!-- ======================================================
+     STEP 5: ยืนยัน (Review)
+====================================================== -->
+        <div class="step-content" id="step5">
+            <div class="card">
+                <div class="card-title">
+                    <span class="icon-circle"><i class="fas fa-clipboard-check"></i></span>
+                    ตรวจสอบก่อนส่ง
+                </div>
+
+                <div id="review-content">
+                    <!-- Filled by JS -->
+                </div>
+            </div>
+
+            <button class="btn-primary" id="submit-btn" onclick="submitOrder()">
+                <i class="fas fa-paper-plane"></i> ยืนยันสั่งจอง
+            </button>
+            <button class="btn-secondary" onclick="goStep(4)">
+                <i class="fas fa-edit"></i> แก้ไขข้อมูล
+            </button>
+        </div>
+
+        <!-- ======================================================
+     STEP 6: สำเร็จ
+====================================================== -->
+        <div class="step-content" id="step6">
+            <div class="card">
+                <div class="success-screen">
+                    <div class="big-icon">🎉</div>
+                    <h2>บันทึกสำเร็จแล้ว!</h2>
+                    <p>ระบบได้รับข้อมูลการสั่งจอง<br>เรียบร้อยแล้วครับ/ค่ะ</p>
+                    <div class="order-id-box" id="success-order-id">
+                        🧾 หมายเลขคำสั่งซื้อ: #XXX
+                    </div>
+                    <p style="font-size:18px; color:#475569;">
+                        ทางโรงเรียนจะตรวจสอบสลิปและ<br>
+                        แจ้งผลภายใน 1-2 วันทำการ
+                    </p>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /main-wrap -->
+
+    <!-- ============================================================
+     JAVASCRIPT
+============================================================ -->
+    <script>
+        // ========== CONFIG ==========
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyzukc86Jx7CRLVUnrZw-OCzoOoWOGzoC2cEbOeTqWesKPe_w27QEOmHzSw_sUFOPSXcA/exec';
+        const LIFF_ID = '2008830546-kUtMFdic'; // <-- ⚠️ เปลี่ยนเป็น LIFF ID ของคุณ
+        const BANK_ACCOUNT = '079-2-83430-8'; // <-- ⚠️ เปลี่ยนเป็นเลขบัญชีจริง
+
+        const IMG_MAP = {
+            A: 'https://img5.pic.in.th/file/secure-sv1/112b6c9aefb5003c54c.jpg',
+            B: 'https://img2.pic.in.th/1135139e27fbb09c45a.jpg',
+            C: 'https://img5.pic.in.th/file/secure-sv1/114a535e8705548710a.jpg'
+        };
+        const ADULT_SIZES = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL'];
+        const CHILD_SIZES = ['S', 'M', 'L', 'XL'];
+        const PRICE = 299;
+
+        // ========== STATE ==========
+        let currentStep = 1;
+        let itemCounter = 0;
+        let lineProfile = null;
+
+        // ========== LIFF INIT ==========
+        document.addEventListener('DOMContentLoaded', async () => {
+            document.getElementById('bank-acc-num').textContent = BANK_ACCOUNT;
+
+            try {
+                await liff.init({ liffId: LIFF_ID });
+                if (liff.isLoggedIn()) {
+                    lineProfile = await liff.getProfile();
+                    document.getElementById('line-display-name').textContent = lineProfile.displayName;
+                    document.getElementById('line-avatar').src = lineProfile.pictureUrl || '';
+                    document.getElementById('line-user-pill').style.display = 'inline-flex';
+                    // Auto-fill name from LINE if empty
+                    if (!document.getElementById('f-name').value) {
+                        document.getElementById('f-name').value = lineProfile.displayName;
+                    }
+                } else {
+                    liff.login();
+                }
+            } catch (e) {
+                console.warn('LIFF init failed (probably testing outside LINE):', e.message);
+                // Allow usage outside LINE for testing
+            }
+
+            addItem(); // Add first item row by default
+            document.querySelectorAll('input[name="delivery"]').forEach(r => {
+                r.addEventListener('change', () => {
+                    document.getElementById('address-wrap').style.display =
+                        r.value === 'shipping' ? 'block' : 'none';
+                });
+            });
+        });
+
+        // ========== STEP NAVIGATION ==========
+        function goStep(n) {
+            // Validate before going forward
+            if (n > currentStep && !validateStep(currentStep)) return;
+
+            // Mark steps
+            for (let i = 1; i <= 5; i++) {
+                const sp = document.getElementById('sp' + i);
+                const sc = document.getElementById('sc' + i);
+                sp.className = 'step-dot';
+                if (i < n) { sp.classList.add('done'); sc.innerHTML = '<i class="fas fa-check" style="font-size:16px"></i>'; }
+                else if (i === n) { sp.classList.add('active'); sc.textContent = i; }
+                else { sc.textContent = i === 5 ? '✓' : i; }
+                if (i < 5) {
+                    document.getElementById('sl' + i).className = 'step-line' + (i < n ? ' done' : '');
+                }
+            }
+
+            // Show step
+            document.querySelectorAll('.step-content').forEach(s => s.classList.remove('active'));
+            document.getElementById('step' + n).classList.add('active');
+            currentStep = n;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            if (n === 5) renderReview();
+        }
+
+        // ========== VALIDATION ==========
+        function validateStep(step) {
+            if (step === 1) {
+                if (!document.getElementById('f-prefix').value) {
+                    alert('⚠️ กรุณาเลือกคำนำหน้าชื่อ'); return false;
+                }
+                const name = document.getElementById('f-name').value.trim();
+                if (name.length < 3) {
+                    alert('⚠️ กรุณากรอกชื่อ-นามสกุลให้ครบถ้วน'); return false;
+                }
+                const phone = document.getElementById('f-phone').value.trim();
+                if (phone.length < 9) {
+                    alert('⚠️ กรุณากรอกเบอร์โทรให้ครบถ้วน (อย่างน้อย 9 หลัก)'); return false;
+                }
+            }
+            if (step === 2) {
+                const items = getOrderItems();
+                if (!items || items.length === 0) {
+                    alert('⚠️ กรุณาเลือกแบบและขนาดเสื้ออย่างน้อย 1 รายการ'); return false;
+                }
+                let valid = true;
+                document.querySelectorAll('.item-row').forEach((row, idx) => {
+                    const styleChk = row.querySelector('input[name^="i-style"]:checked');
+                    const sizeAdult = row.querySelector('input[name^="i-adult"]:checked');
+                    const sizeChild = row.querySelector('input[name^="i-child"]:checked');
+                    const qty = parseInt(row.querySelector('.qty-val').textContent);
+                    if (!styleChk) { alert('⚠️ รายการที่ ' + (idx + 1) + ': กรุณาเลือกแบบเสื้อ'); valid = false; }
+                    else if (!sizeAdult && !sizeChild) { alert('⚠️ รายการที่ ' + (idx + 1) + ': กรุณาเลือกขนาดเสื้อ'); valid = false; }
+                    else if (qty === 0) { alert('⚠️ รายการที่ ' + (idx + 1) + ': จำนวนต้องมากกว่า 0'); valid = false; }
+                });
+                if (!valid) return false;
+            }
+            if (step === 3) {
+                const delivery = document.querySelector('input[name="delivery"]:checked');
+                if (!delivery) { alert('⚠️ กรุณาเลือกวิธีรับเสื้อ'); return false; }
+                if (delivery.value === 'shipping') {
+                    const addr = document.getElementById('f-address').value.trim();
+                    if (addr.length < 10) { alert('⚠️ กรุณากรอกที่อยู่ให้ครบถ้วน'); return false; }
+                }
+            }
+            return true;
+        }
+
+        // ========== ITEM MANAGEMENT ==========
+        function addItem() {
+            itemCounter++;
+            const id = itemCounter;
+            const container = document.getElementById('items-container');
+            const div = document.createElement('div');
+            div.className = 'item-row';
+            div.id = 'item-row-' + id;
+
+            div.innerHTML = `
+        <div class="item-row-hdr">
+            <span class="item-row-num">รายการที่ ${container.children.length + 1}</span>
+            ${container.children.length > 0 ? `<button class="item-remove-btn" onclick="removeItem(${id})"><i class="fas fa-trash-alt"></i></button>` : ''}
+        </div>
+
+        <!-- Style Selection -->
+        <div style="margin-bottom:16px;">
+            <div class="field-label" style="margin-bottom:12px;">เลือกแบบเสื้อ <span class="req">*</span></div>
+            <div class="style-grid">
+                ${['A', 'B', 'C'].map(s => `
+                    <label class="style-card-label" onclick="calcTotal()">
+                        <input type="radio" name="i-style-${id}" value="${s}">
+                        <div class="style-card-inner">
+                            <div class="style-check"><i class="fas fa-check"></i></div>
+                            <img src="${IMG_MAP[s]}" alt="แบบ ${s}" loading="lazy">
+                            <div class="style-card-name">แบบ ${s}</div>
+                        </div>
+                    </label>
+                `).join('')}
+            </div>
+        </div>
+
+        <!-- Adult Sizes -->
+        <div class="size-section-title"><i class="fas fa-user"></i> ผู้ใหญ่</div>
+        <div class="size-grid" style="margin-bottom:16px;">
+            ${ADULT_SIZES.map(sz => `
+                <label class="size-btn">
+                    <input type="radio" name="i-adult-${id}" value="adult_${sz}" onchange="setCategory(${id},'adult'); calcTotal();">
+                    <div class="size-btn-inner">${sz}</div>
+                </label>
+            `).join('')}
+        </div>
+
+        <!-- Child Sizes -->
+        <div class="size-section-title"><i class="fas fa-child"></i> เด็ก</div>
+        <div class="size-grid" style="margin-bottom:20px;">
+            ${CHILD_SIZES.map(sz => `
+                <label class="size-btn">
+                    <input type="radio" name="i-child-${id}" value="child_${sz}" onchange="setCategory(${id},'child'); calcTotal();">
+                    <div class="size-btn-inner">${sz}</div>
+                </label>
+            `).join('')}
+        </div>
+
+        <!-- Quantity -->
+        <div class="field-label">จำนวน</div>
+        <div class="size-qty-row">
+            <button class="qty-btn qty-minus" onclick="changeQty(${id}, -1)">−</button>
+            <span class="qty-val qty-display" id="qty-${id}">1</span>
+            <button class="qty-btn qty-plus" onclick="changeQty(${id}, +1)">+</button>
+            <span class="qty-label">ตัว × ฿${PRICE} = <strong id="sub-${id}">฿${PRICE}</strong></span>
+        </div>
+    `;
+
+            container.appendChild(div);
+            calcTotal();
+        }
+
+        function setCategory(id, cat) {
+            // When adult size chosen, clear child; and vice versa
+            if (cat === 'adult') {
+                document.querySelectorAll(`input[name="i-child-${id}"]`).forEach(r => r.checked = false);
+            } else {
+                document.querySelectorAll(`input[name="i-adult-${id}"]`).forEach(r => r.checked = false);
+            }
+        }
+
+        function removeItem(id) {
+            document.getElementById('item-row-' + id).remove();
+            // Renumber
+            document.querySelectorAll('.item-row').forEach((row, idx) => {
+                row.querySelector('.item-row-num').textContent = 'รายการที่ ' + (idx + 1);
+            });
+            calcTotal();
+        }
+
+        function changeQty(id, delta) {
+            const el = document.getElementById('qty-' + id);
+            let val = parseInt(el.textContent) + delta;
+            if (val < 1) val = 1;
+            if (val > 20) val = 20;
+            el.textContent = val;
+            document.getElementById('sub-' + id).textContent = '฿' + (val * PRICE).toLocaleString();
+            calcTotal();
+        }
+
+        function calcTotal() {
+            let totalQty = 0, totalPrice = 0;
+            document.querySelectorAll('.item-row').forEach(row => {
+                const qty = parseInt(row.querySelector('.qty-val').textContent) || 0;
+                const hasSize = row.querySelector('input[name^="i-adult"]:checked') || row.querySelector('input[name^="i-child"]:checked');
+                if (hasSize) { totalQty += qty; totalPrice += qty * PRICE; }
+            });
+            document.getElementById('total-qty').textContent = totalQty + ' รายการ';
+            document.getElementById('total-price').textContent = '฿' + totalPrice.toLocaleString();
+        }
+
+        function getOrderItems() {
+            const items = [];
+            document.querySelectorAll('.item-row').forEach(row => {
+                const styleChk = row.querySelector('input[name^="i-style"]:checked');
+                const adultChk = row.querySelector('input[name^="i-adult"]:checked');
+                const childChk = row.querySelector('input[name^="i-child"]:checked');
+                const qty = parseInt(row.querySelector('.qty-val').textContent);
+                if (styleChk && (adultChk || childChk) && qty > 0) {
+                    const size = adultChk ? adultChk.value : childChk.value;
+                    items.push({ style: styleChk.value, size, qty });
+                }
+            });
+            return items;
+        }
+
+        // ========== REVIEW ==========
+        function renderReview() {
+            const prefix = document.getElementById('f-prefix').value;
+            const name = document.getElementById('f-name').value.trim();
+            const phone = document.getElementById('f-phone').value.trim();
+            const delivery = document.querySelector('input[name="delivery"]:checked')?.value;
+            const address = document.getElementById('f-address').value.trim();
+            const items = getOrderItems();
+
+            let totalPrice = 0;
+            const itemsHtml = items.map(it => {
+                const sub = it.qty * PRICE;
+                totalPrice += sub;
+                const sizeLabel = it.size.startsWith('adult_') ? 'ผู้ใหญ่ - ' + it.size.replace('adult_', '')
+                    : 'เด็ก - ' + it.size.replace('child_', '');
+                return `
+            <div class="review-row">
+                <span class="rlabel">เสื้อ</span>
+                <span class="rval">แบบ ${it.style} / ${sizeLabel}<br>
+                    <span style="color:var(--muted);font-size:17px;">${it.qty} ตัว × ฿${PRICE} = ฿${sub.toLocaleString()}</span>
+                </span>
+            </div>`;
+            }).join('');
+
+            const deliveryText = delivery === 'pickup' ? '🏫 รับด้วยตนเอง (ที่โรงเรียน)' : '🚚 จัดส่งตามที่อยู่ (ฟรี)';
+            const hasSlip = document.getElementById('slip-input').files.length > 0;
+
+            document.getElementById('review-content').innerHTML = `
+        <div class="review-row">
+            <span class="rlabel">ชื่อ</span>
+            <span class="rval">${prefix}${name}</span>
+        </div>
+        <div class="review-row">
+            <span class="rlabel">เบอร์</span>
+            <span class="rval">${phone}</span>
+        </div>
+        ${itemsHtml}
+        <div class="review-row">
+            <span class="rlabel">รับเสื้อ</span>
+            <span class="rval">${deliveryText}</span>
+        </div>
+        ${address ? `<div class="review-row"><span class="rlabel">ที่อยู่</span><span class="rval">${address}</span></div>` : ''}
+        <div class="review-row">
+            <span class="rlabel">สลิป</span>
+            <span class="rval">${hasSlip ? '✅ แนบแล้ว' : '⏳ ยังไม่แนบ (แนบทีหลังได้)'}</span>
+        </div>
+        <div class="review-total-row">
+            <span>ยอดรวมทั้งหมด</span>
+            <span>฿${totalPrice.toLocaleString()}</span>
+        </div>
+    `;
+        }
+
+        // ========== SUBMIT ==========
+        async function submitOrder() {
+            const btn = document.getElementById('submit-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังบันทึก...';
+
+            try {
+                const prefix = document.getElementById('f-prefix').value;
+                const name = document.getElementById('f-name').value.trim();
+                const phone = document.getElementById('f-phone').value.trim();
+                const address = document.getElementById('f-address').value.trim();
+                const delivery = document.querySelector('input[name="delivery"]:checked').value;
+                const items = getOrderItems();
+
+                // Build items string matching index.html format
+                const itemsList = items.map(it => `แบบ ${it.style} (${it.size}) x${it.qty}`);
+                const totalPrice = items.reduce((s, it) => s + it.qty * PRICE, 0);
+
+                // Handle slip
+                let slipBase64 = '', mimeType = '';
+                const slipFile = document.getElementById('slip-input').files[0];
+                if (slipFile) {
+                    mimeType = slipFile.type;
+                    slipBase64 = await new Promise(res => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => res(reader.result.split(',')[1]);
+                        reader.readAsDataURL(slipFile);
+                    });
+                }
+
+                const payload = {
+                    prefix, name, phone, address,
+                    items: itemsList.join(', '),
+                    delivery,
+                    total: totalPrice.toString(),
+                    slipBase64, mimeType
+                };
+
+                const res = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+
+                // Show success
+                document.querySelectorAll('.step-content').forEach(s => s.classList.remove('active'));
+                document.getElementById('step6').classList.add('active');
+                document.getElementById('success-order-id').textContent =
+                    '🧾 หมายเลขคำสั่งซื้อ: #' + (data.orderId || '—');
+
+                // Mark all steps done
+                for (let i = 1; i <= 5; i++) {
+                    document.getElementById('sp' + i).className = 'step-dot done';
+                    document.getElementById('sc' + i).innerHTML = '<i class="fas fa-check" style="font-size:14px"></i>';
+                    if (i < 5) document.getElementById('sl' + i).className = 'step-line done';
+                }
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            } catch (err) {
+                console.error(err);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i> ยืนยันสั่งจอง';
+                Swal.fire({
+                    icon: 'error',
+                    title: 'เกิดข้อผิดพลาด',
+                    text: 'ไม่สามารถบันทึกได้ กรุณาลองใหม่ หรือติดต่อทางโรงเรียน',
+                    confirmButtonColor: '#1A237E'
+                });
+            }
+        }
+
+        // ========== SLIP PREVIEW ==========
+        function previewSlip(input) {
+            if (!input.files[0]) return;
+            const reader = new FileReader();
+            reader.onload = e => {
+                const img = document.getElementById('slip-preview');
+                img.src = e.target.result;
+                img.style.display = 'block';
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+
+        // ========== COPY ACCOUNT ==========
+        function copyAccNum() {
+            navigator.clipboard.writeText(BANK_ACCOUNT.replace(/-/g, '')).then(() => {
+                Swal.fire({ toast: true, position: 'top', icon: 'success', title: 'คัดลอกเลขบัญชีแล้ว!', timer: 1800, showConfirmButton: false });
+            });
+        }
+    </script>
+</body>
+
+</html>
